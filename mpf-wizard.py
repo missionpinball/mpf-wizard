@@ -6,18 +6,19 @@ from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.tabbedpanel import TabbedPanel
 import logging
+import logging.config
 from datetime import datetime
 import socket
 import os
 import argparse
-# import errno
+import errno
 import version
-# import sys
+import sys
 # #from mpf.system.machine import MachineController
-# #from mpf.system.utility_functions import Util
+from mpf.system.utility_functions import Util
 from machinewizard import MachineWizard
 
-parser = argparse.ArgumentParser(description='Starts the MPF Wizard')
+parser = argparse.ArgumentParser(description='Starts the mpf-wizard')
 
 parser.add_argument("machine_path", help="Path of the machine folder.")
 
@@ -34,10 +35,9 @@ parser.add_argument("-v",
                     " log file")
 
 parser.add_argument("-V",
-                    action="store_true", dest="consoleloglevel",
+                    action="store_const", dest="consoleloglevel", const=logging.DEBUG,
                     default=logging.INFO,
-                    help="Enables verbose logging to the console. Do NOT on "
-                    "Windows platforms. Must also use -v for this to work.")
+                    help="Enables verbose logging to the console. Do NOT use on Windows platforms.  Must be also used with -v to work.")
 
 parser.add_argument("-x",
                     action="store_const", dest="force_platform",
@@ -83,10 +83,40 @@ except OSError as exception:
     if exception.errno != errno.EEXIST:
         raise
 
-# Logger
-# logging.basicConfig(level=args.loglevel, format='%(asctime)s : %(levelname)s : %(name)s : %(message)s', filename=args.logfile)
 
-# logging.info('starting up the mpf-wizard')
+# logging config
+dictLogConfig = { 
+    'version': 1,
+    'formatters': { 
+        'standard': { 
+            'format': '%(asctime)s : %(levelname)s : %(name)s : %(message)s'
+        }
+    },
+    'handlers': { 
+        'filelog': { 
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': args.logfile,
+            'formatter': 'standard'
+        },
+        'consolelog': { 
+            'class': 'logging.StreamHandler',
+            'level': args.consoleloglevel,
+            'formatter': 'standard',
+            'stream' : 'ext://sys.stdout'
+        }
+    },
+    'loggers': { 
+        'mpf-wizard': { 
+            'handlers': ['filelog','consolelog'],
+            'level': args.loglevel
+        }
+    }
+}
+
+logging.config.dictConfig(dictLogConfig)
+mpflogger = logging.getLogger('mpf-wizard')
+mpflogger.info('starting up the mpf-wizard')
+mpflogger.debug('Command Line Arguments: ' + str(sys.argv))
 
 class MyApp(App):
 
@@ -95,7 +125,7 @@ class MyApp(App):
             #machine = MachineWizard(vars(args))
             test = 1 #wont compile without this which is python dumb
         except Exception as e:
-            logging.exception(e)
+            mpflogger.exception(e)
             App.get_running_app().Stop()
         
         return Label(text=args.machine_path)
