@@ -49,13 +49,11 @@ class MachineWizard(object):
     """
     def __init__(self, options):
         self.options = options
-        self.log = logging.getLogger("Machine")
+        self.log = logging.getLogger('machinewizard')
         self.log.info("MPF Wizard v%s", version.__version__)
-        self.log.debug("Command line arguments: {}".format(self.options))
+        self.log.debug("Init Options: {}".format(self.options))
         self.verify_system_info()
 
-        self.loop_start_time = 0
-        self.tick_num = 0
         self.done = False
         self.machine_path = None  # Path to this machine's folder root
         self.monitors = dict()
@@ -72,31 +70,14 @@ class MachineWizard(object):
         self.flag_bcp_reset_complete = False
         self.asset_loader_complete = False
 
-        self.delayRegistry = DelayManagerRegistry()
-        self.delay = DelayManager(self.delayRegistry)
-
-        self.crash_queue = queue.Queue()
-        Task.create(self._check_crash_queue)
-
         FileManager.init()
         self.config = dict()
-        self._load_mpf_config()
+        self.config = Config.load_config_file(self.options['mpfconfigfile'])
         self._set_machine_path()
-        self._load_machine_config()
+        self._load_config_from_files()
         
         self.hardware_platforms = dict()
-        self.default_platform = None
-
-        if not self.options['force_platform']:
-            for section, platform in self.config['hardware'].items():
-                if platform.lower() != 'default' and section != 'driverboards':
-                        self.add_platform(platform)
-            self.set_default_platform(self.config['hardware']['platform'])
-
-        else:
-            self.add_platform(self.options['force_platform'])
-            self.set_default_platform(self.options['force_platform'])
-        
+        self.default_platform = None        
 
         # Do this here so there's a credit_string var even if they're not using
         # the credits mode
@@ -107,12 +88,7 @@ class MachineWizard(object):
 
         self.create_machine_var('credits_string', credit_string, silent=True)
 
-        self._load_system_modules()
-
-        self.validate_machine_config_section('machine')
-        self.validate_machine_config_section('timing')
-        self.validate_machine_config_section('hardware')
-        self.validate_machine_config_section('game')
+        self.log.info('machine config loaded')
 
     def validate_machine_config_section(self, section):
         if section not in self.config['config_validator']:
@@ -149,9 +125,6 @@ class MachineWizard(object):
             self.log.critical("Crash details: %s", crash)
             self.done = True
 
-    def _load_mpf_config(self):
-        self.config = Config.load_config_file(self.options['mpfconfigfile'])
-
     def _set_machine_path(self):
         # If the machine folder value passed starts with a forward or
         # backward slash, then we assume it's from the mpf root. Otherwise we
@@ -169,40 +142,6 @@ class MachineWizard(object):
 
         # Add the machine folder to sys.path so we can import modules from it
         sys.path.append(self.machine_path)
-
-    def _load_machine_config(self):
-#        if self.options['rebuild_cache']:
-#            load_from_cache = False
-#        else:
-#            try:
-#                cache_file = os.path.join(
-#                        self.machine_path, '_cache', '{}_config.p'.
-#                        format('-'.join(self.options['configfile'])))
-#                latest_config_mod_time = self._get_latest_config_mod_time()
-#                cache_file_mod_time = os.path.getmtime(os.path.join(
-#                        self.machine_path, '_cache', '{}_config.p'.
-#                        format('-'.join(self.options['configfile']))))
-#                
-#                self.log.debug("Cache File: %s", cache_file)
-#                self.log.debug("Latest Config Mod Time: %s", latest_config_mod_time)
-#                self.log.debug("Cache File Mod Time: %s", cache_file_mod_time)
-#                if latest_config_mod_time > cache_file_mod_time:
-#                    load_from_cache = False  # config is newer
-#                else:
-#                    load_from_cache = True  # cache is newer
-
-#            except OSError as exception:
-#                if exception.errno != errno.ENOENT:
-#                    raise  # some unknown error?
-#                else:
-#                    load_from_cache = False  # cache file doesn't exist
-
- #       config_loaded = False
- #       if load_from_cache:
- #           config_loaded = self._load_config_from_cache()
-
- #       if not config_loaded:
-            self._load_config_from_files()
 
     def _load_config_from_files(self):
         self.log.info("Loading config from original files")
@@ -294,13 +233,6 @@ class MachineWizard(object):
         self.log.debug("Platform: %s", sys.platform)
         self.log.debug("Python executable location: %s", sys.executable)
         self.log.debug("32-bit Python? %s", sys.maxsize < 2**32)
-
-    def _load_system_modules(self):
-        self.log.info("Loading system modules...")
-        for name, module in self.config['mpf']['system_modules'].items():
-            self.log.debug("Loading '%s' system module", module)
-            m = self.string_to_class(module)(self)
-            setattr(self, name, m)
 
     def _load_plugins(self):
         self.log.info("Loading plugins...")

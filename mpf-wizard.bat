@@ -1,0 +1,1 @@
+python mpf-wizard.py e:\spaceballs\spaceballs -v -N E:\mpf-dev\mpf\mpf\mpfconfig.yaml

@@ -5,6 +5,8 @@ from kivy.logger import Logger
 from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.tabbedpanel import TabbedPanel
+from kivy.uix.treeview import TreeView, TreeViewLabel
+from kivy.uix.widget import Widget
 import logging
 import logging.config
 from datetime import datetime
@@ -17,6 +19,7 @@ import sys
 # #from mpf.system.machine import MachineController
 from mpf.system.utility_functions import Util
 from machinewizard import MachineWizard
+from mpf_wizard_ui import RawConfigTree
 
 parser = argparse.ArgumentParser(description='Starts the mpf-wizard')
 
@@ -109,6 +112,14 @@ dictLogConfig = {
         'mpf-wizard': { 
             'handlers': ['filelog','consolelog'],
             'level': args.loglevel
+        },
+        'machinewizard': { 
+            'handlers': ['filelog','consolelog'],
+            'level': args.loglevel
+        },
+        'mpf-wizard-ui': { 
+            'handlers': ['filelog','consolelog'],
+            'level': args.loglevel
         }
     }
 }
@@ -120,17 +131,39 @@ mpflogger.debug('Command Line Arguments: ' + str(sys.argv))
 
 class MyApp(App):
 
+    title = "MPF Wizard v" + version.__version__
+    
     def build(self):
         try:
-            #machine = MachineWizard(vars(args))
+            machine = MachineWizard(vars(args))
             test = 1 #wont compile without this which is python dumb
         except Exception as e:
             mpflogger.exception(e)
             App.get_running_app().Stop()
         
-        return Label(text=args.machine_path)
+        rct = RawConfigTree(machine.config)
+        return rct.treeview
+        
+        #return Label(text='Plugins: ' + machine.config['mpf']['plugins'])
+        #return Label(text=args.machine_path)
         #return Label(text="bah")
 
+        #tv = TreeView()
+        #add = tv.add_node
+        #root = add(TreeViewLabel(text='Level 1, entry 1', is_open=True))
+        # for x in xrange(5):
+            # add(TreeViewLabel(text='Element %d' % x), root)
+        # root2 = add(TreeViewLabel(text='Level 1, entry 2', is_open=False))
+        # for x in xrange(24):
+            # add(TreeViewLabel(text='Element %d' % x), root2)
+        # for x in xrange(5):
+            # add(TreeViewLabel(text='Element %d' % x), root)
+        # root2 = add(TreeViewLabel(text='Element childs 2', is_open=False),
+                    # root)
+        # for x in xrange(24):
+            # add(TreeViewLabel(text='Element %d' % x), root2)
+        #return tv
+        
 
 if __name__ == '__main__':
     MyApp().run()
