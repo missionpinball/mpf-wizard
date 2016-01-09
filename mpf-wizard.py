@@ -16,10 +16,10 @@ import argparse
 import errno
 import version
 import sys
-# #from mpf.system.machine import MachineController
 from mpf.system.utility_functions import Util
 from machinewizard import MachineWizard
 from mpf_wizard_ui import RawConfigTree
+
 
 parser = argparse.ArgumentParser(description='Starts the mpf-wizard')
 
@@ -130,7 +130,7 @@ mpflogger.info('starting up the mpf-wizard')
 mpflogger.debug('Command Line Arguments: ' + str(sys.argv))
 
 class MyApp(App):
-
+    icon = 'mpf-wizard_icon_256x256.png'
     title = "MPF Wizard v" + version.__version__
     
     def build(self):
