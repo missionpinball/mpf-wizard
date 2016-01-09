@@ -1,9 +1,12 @@
 from kivy.uix.label import Label
 from kivy.uix.treeview import TreeView, TreeViewLabel
 import logging
+import sys
 
 
 class RawConfigTree(object):
+
+
 
     def __init__(self, configdict):
         self.rawdict = configdict
@@ -14,16 +17,29 @@ class RawConfigTree(object):
             tv = TreeView()
             
             for key in self.rawdict:
-                tv.add_node(TreeViewLabel(text=key))
+                if isinstance(self.rawdict[key], dict):
+                    newnode = tv.add_node(TreeViewLabel(text=key))
+                    self._addNodesToTree(tv, newnode, self.rawdict[key])
+                else:
+                    newnode = tv.add_node(TreeViewLabel(text=key + ':' + str(self.rawdict[key])))
 
-            #n1 = tv.add_node(TreeViewLabel(text='Item 1'))
-            #tv.add_node(TreeViewLabel(text='SubItem 1'), n1)
-            #tv.add_node(TreeViewLabel(text='SubItem 2'), n1)        
             self.treeview = tv
         except:
-           self.log.debug('Error: ' + sys.exc_info()[0])
+            e = sys.exc_info()[0]
+            self.log.exception("Error: %s" % e )
+            raise
             
-
+    def _addNodesToTree(self, tree_view, parent_node, value):
+        
+        if isinstance(value, dict):
+            for key in value:
+                if isinstance(value[key], dict):
+                    newnode = tree_view.add_node(TreeViewLabel(text=key), parent_node)
+                    self._addNodesToTree(tree_view, newnode, value[key])
+                else:
+                    newnode = tree_view.add_node(TreeViewLabel(text=key + ':' + str(value[key])), parent_node)
+                    
+    
 # The MIT License (MIT)
 
 # Copyright (c) 2013-2016 Brian Madden, Gabe Knuth and John Marsh
