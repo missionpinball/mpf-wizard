@@ -22,6 +22,7 @@ from mpf.system.assets import AssetManager
 from mpf.system.utility_functions import Util
 from mpf.system.file_manager import FileManager
 import version
+from config_storage import MPFConfigFile
 
 
 class MachineWizard(object):
@@ -71,8 +72,12 @@ class MachineWizard(object):
         self.asset_loader_complete = False
 
         FileManager.init()
-        self.config = dict()
-        self.config = Config.load_config_file(self.options['mpfconfigfile'])
+
+        self.mpfconfig = dict()
+        self.mpfconfig = Config.load_config_file(self.options['mpfconfigfile'])
+
+        self.config_files = dict()
+        #self.config = Config.load_config_file(self.options['mpfconfigfile'])
         self._set_machine_path()
         self._load_config_from_files()
         
@@ -81,12 +86,12 @@ class MachineWizard(object):
 
         # Do this here so there's a credit_string var even if they're not using
         # the credits mode
-        try:
-            credit_string = self.config['credits']['free_play_string']
-        except KeyError:
-            credit_string = 'FREE PLAY'
+        #try:
+            #credit_string = self.config['credits']['free_play_string']
+        #except KeyError:
+            #credit_string = 'FREE PLAY'
 
-        self.create_machine_var('credits_string', credit_string, silent=True)
+        #self.create_machine_var('credits_string', credit_string, silent=True)
 
         self.log.info('machine config loaded')
 
@@ -115,16 +120,6 @@ class MachineWizard(object):
 
             self.create_machine_var(name=name, value=settings['value'])
 
-    def _check_crash_queue(self):
-        try:
-            crash = self.crash_queue.get(block=False)
-        except queue.Empty:
-            yield 1000
-        else:
-            self.log.critical("MPF Shutting down due to child thread crash")
-            self.log.critical("Crash details: %s", crash)
-            self.done = True
-
     def _set_machine_path(self):
         # If the machine folder value passed starts with a forward or
         # backward slash, then we assume it's from the mpf root. Otherwise we
@@ -133,7 +128,7 @@ class MachineWizard(object):
                 self.options['machine_path'].startswith('\\')):
             machine_path = self.options['machine_path']
         else:
-            machine_path = os.path.join(self.config['mpf']['paths']
+            machine_path = os.path.join(self.mpfconfig['mpf']['paths']
                                         ['machine_files'],
                                         self.options['machine_path'])
 
@@ -151,32 +146,29 @@ class MachineWizard(object):
                     config_file.startswith('\\')):
 
                 config_file = os.path.join(self.machine_path,
-                    self.config['mpf']['paths']['config'], config_file)
+                    self.mpfconfig['mpf']['paths']['config'], config_file)
 
             self.log.info("Machine config file #%s: %s", num+1, config_file)
 
-            self.config = Util.dict_merge(self.config,
-                Config.load_config_file(config_file))
+            new_config = self._load_config_file(config_file)
+            #new_config = MPFConfigFile(config_file, self._load_config_file(config_file))
+            self.config_files[config_file] = new_config
 
-        #self._cache_config()
+    def _load_config_file(self, filename, verify_version=True, halt_on_error=True):
+        config_file = MPFConfigFile(filename, FileManager.load(filename, verify_version, halt_on_error, True))
 
-    #def _load_config_from_cache(self):
-        #self.log.info("Loading cached config: {}".format(
-            #os.path.join(self.machine_path, '_cache',
-            #'{}_config.p'.format('-'.join(self.options['configfile'])))))
+        try:
+            if 'config' in config_file.config:
+                path = os.path.split(filename)[0]
 
-        #with open(os.path.join(
-                #self.machine_path, '_cache', '{}_config.p'.
-                #format('-'.join(self.options['configfile']))), 'r') as f:
+                for file in Util.string_to_list(config_file.config['config']):
+                    full_file = os.path.join(path, file)
+                    new_config = self._load_config_file(full_file)
+                    config_file.add_child_file(new_config)
+            return config_file
+        except TypeError:
+            return dict()
 
-            #try:
-                #self.config = pickle.load(f)
-
-            #except:
-                #self.log.warning("Could not load config from cache")
-                #return False
-
-            #return True
 
     def _get_latest_config_mod_time(self):
 

@@ -18,7 +18,7 @@ import version
 import sys
 from mpf.system.utility_functions import Util
 from machinewizard import MachineWizard
-from mpf_wizard_ui import RawConfigTree
+from mpf_wizard_ui import RawConfigTree, UIConfigTree
 
 
 parser = argparse.ArgumentParser(description='Starts the mpf-wizard')
@@ -141,8 +141,11 @@ class MyApp(App):
             mpflogger.exception(e)
             App.get_running_app().Stop()
         
-        rct = RawConfigTree(machine.config)
-        return rct.treeview
+        #rct = RawConfigTree(machine.config_files)
+        #return rct.treeview
+        
+        uct = UIConfigTree(machine.config_files)
+        return uct.getTreeViewAsFiles()
         
         #return Label(text='Plugins: ' + machine.config['mpf']['plugins'])
         #return Label(text=args.machine_path)
