@@ -18,7 +18,7 @@ import version
 import sys
 from mpf.system.utility_functions import Util
 from machinewizard import MachineWizard
-from mpf_wizard_ui import RawConfigTree, UIConfigTree
+from mpf_wizard_ui import UIConfigTree, WizardUI
 
 
 parser = argparse.ArgumentParser(description='Starts the mpf-wizard')
@@ -129,44 +129,24 @@ mpflogger = logging.getLogger('mpf-wizard')
 mpflogger.info('starting up the mpf-wizard')
 mpflogger.debug('Command Line Arguments: ' + str(sys.argv))
 
-class MyApp(App):
+class MPFWizardApp(App):
     icon = 'mpf-wizard_icon_256x256.png'
     title = "MPF Wizard v" + version.__version__
     
     def build(self):
         try:
             machine = MachineWizard(vars(args))
-            test = 1 #wont compile without this which is python dumb
         except Exception as e:
             mpflogger.exception(e)
             App.get_running_app().Stop()
-        
-        #rct = RawConfigTree(machine.config_files)
-        #return rct.treeview
-        
-        uct = UIConfigTree(machine.config_files)
-        return uct.getTreeViewAsFiles()
-        
-        #return Label(text='Plugins: ' + machine.config['mpf']['plugins'])
-        #return Label(text=args.machine_path)
-        #return Label(text="bah")
+                
+        #uct = UIConfigTree(machine.config_files)
+        #return uct.getTreeViewAsFiles()
 
-        #tv = TreeView()
-        #add = tv.add_node
-        #root = add(TreeViewLabel(text='Level 1, entry 1', is_open=True))
-        # for x in xrange(5):
-            # add(TreeViewLabel(text='Element %d' % x), root)
-        # root2 = add(TreeViewLabel(text='Level 1, entry 2', is_open=False))
-        # for x in xrange(24):
-            # add(TreeViewLabel(text='Element %d' % x), root2)
-        # for x in xrange(5):
-            # add(TreeViewLabel(text='Element %d' % x), root)
-        # root2 = add(TreeViewLabel(text='Element childs 2', is_open=False),
-                    # root)
-        # for x in xrange(24):
-            # add(TreeViewLabel(text='Element %d' % x), root2)
-        #return tv
-        
+        #root = self.root
+        wizardui = WizardUI(machine)
+        return wizardui.getMainMenu()
+
 
 if __name__ == '__main__':
-    MyApp().run()
+    MPFWizardApp().run()

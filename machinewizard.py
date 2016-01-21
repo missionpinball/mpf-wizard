@@ -57,19 +57,10 @@ class MachineWizard(object):
 
         self.done = False
         self.machine_path = None  # Path to this machine's folder root
-        self.monitors = dict()
-        self.plugins = list()
-        self.scriptlets = list()
-        self.modes = list()
-        self.asset_managers = dict()
         self.game = None
-        self.active_debugger = dict()
         self.machine_vars = CaseInsensitiveDict()
         self.machine_var_monitor = False
         self.machine_var_data_manager = None
-
-        self.flag_bcp_reset_complete = False
-        self.asset_loader_complete = False
 
         FileManager.init()
 
@@ -169,42 +160,6 @@ class MachineWizard(object):
         except TypeError:
             return dict()
 
-
-    def _get_latest_config_mod_time(self):
-
-        latest_time = 0.0
-
-        for root, dirs, files in os.walk(
-                os.path.join(self.machine_path, 'config')):
-            for name in files:
-                if not name.startswith('.'):
-                    if os.path.getmtime(os.path.join(root, name)) > latest_time:
-                        latest_time = os.path.getmtime(os.path.join(root, name))
-
-            for name in dirs:
-                if not name.startswith('.'):
-                    if os.path.getmtime(os.path.join(root, name)) > latest_time:
-                        latest_time = os.path.getmtime(os.path.join(root, name))
-
-        return latest_time
-
-    def _cache_config(self):
-
-        try:
-            os.makedirs(os.path.join(self.machine_path, '_cache'))
-        except OSError as exception:
-            if exception.errno != errno.EEXIST:
-                raise
-
-        with open(os.path.join(
-                self.machine_path, '_cache', '{}_config.p'.
-                format('-'.join(self.options['configfile']))),
-                'wb') as f:
-            pickle.dump(self.config, f)
-            self.log.info('Config file cache created: {}'.format(os.path.join(
-                self.machine_path, '_cache', '{}_config.p'.
-                format('-'.join(self.options['configfile'])))))
-
     def verify_system_info(self):
         """Dumps information about the Python installation to the log.
 
@@ -226,283 +181,9 @@ class MachineWizard(object):
         self.log.debug("Python executable location: %s", sys.executable)
         self.log.debug("32-bit Python? %s", sys.maxsize < 2**32)
 
-    def _load_plugins(self):
-        self.log.info("Loading plugins...")
-
-        # TODO: This should be cleaned up. Create a Plugins superclass and
-        # classmethods to determine if the plugins should be used.
-
-        for plugin in Util.string_to_list(
-                self.config['mpf']['plugins']):
-
-
-            self.log.debug("Loading '%s' plugin", plugin)
-
-            pluginObj = self.string_to_class(plugin)(self)
-            self.plugins.append(pluginObj)
-
-    def _load_scriptlets(self):
-        if 'scriptlets' in self.config:
-            self.config['scriptlets'] = self.config['scriptlets'].split(' ')
-
-            self.log.info("Loading scriptlets...")
-
-            for scriptlet in self.config['scriptlets']:
-
-                self.log.debug("Loading '%s' scriptlet", scriptlet)
-
-                i = __import__(self.config['mpf']['paths']['scriptlets'] + '.'
-                               + scriptlet.split('.')[0], fromlist=[''])
-
-                self.scriptlets.append(getattr(i, scriptlet.split('.')[1])
-                                       (machine=self,
-                                        name=scriptlet.split('.')[1]))
-
-    def _prepare_to_reset(self):
-        pass
-
-        # wipe all event handlers
-
-    def reset(self):
-        #JAM: Commented the code here out, we don't need to do anything yet, but I was not certain I could remove this function yet.
-        """Resets the machine.
-
-        This method is safe to call. It essentially sets up everything from
-        scratch without reloading the config files and assets from disk. This
-        method is called after a game ends and before attract mode begins.
-
-        Note: This method is not yet implemented.
-
-        """
-#        self.events.post('Resetting...')
-#        self.events._process_event_queue()
-#        self.events.post('machine_reset_phase_1')
-#        self.events._process_event_queue()
-#        self.events.post('machine_reset_phase_2')
-#        self.events._process_event_queue()
-#        self.events.post('machine_reset_phase_3')
-#        self.events._process_event_queue()
-#        self.log.debug('Reset Complete')
-
-    def add_platform(self, name):
-        """Makes an additional hardware platform interface available to MPF.
-
-        Args:
-            name: String name of the platform to add. Must match the name of a
-                platform file in the mpf/platforms folder (without the .py
-                extension).
-
-        """
-
-        if name not in self.hardware_platforms:
-            hardware_platform = __import__('mpf.platform.%s' % name,
-                                           fromlist=["HardwarePlatform"])
-
-            self.hardware_platforms[name] = (
-                hardware_platform.HardwarePlatform(self))
-
-    def set_default_platform(self, name):
-        """Sets the default platform which is used if a device class-specific or
-        device-specific platform is not specified. The default platform also
-        controls whether a platform timer or MPF's timer is used.
-
-        Args:
-            name: String name of the platform to set to default.
-
-        """
-        try:
-            self.default_platform = self.hardware_platforms[name]
-            self.log.debug("Setting default platform to '%s'", name)
-        except KeyError:
-            self.log.error("Cannot set default platform to '%s', as that's not"
-                           " a currently active platform", name)
-
-    def string_to_class(self, class_string):
-        """Converts a string like mpf.system.events.EventManager into a python
-        class.
-
-        Args:
-            class_string(str): The input string
-
-        Returns:
-            A reference to the python class object
-
-        This function came from here:
-        http://stackoverflow.com/questions/452969/
-        does-python-have-an-equivalent-to-java-class-forname
-
-        """
-        parts = class_string.split('.')
-        module = ".".join(parts[:-1])
-        m = __import__(module)
-        for comp in parts[1:]:
-            m = getattr(m, comp)
-        return m
-
-    def register_monitor(self, monitor_class, monitor):
-        """Registers a monitor.
-
-        Args:
-            monitor_class: String name of the monitor class for this monitor
-                that's being registered.
-            monitor: String name of the monitor.
-
-        MPF uses monitors to allow components to monitor certain internal
-        elements of MPF.
-
-        For example, a player variable monitor could be setup to be notified of
-        any changes to a player variable, or a switch monitor could be used to
-        allow a plugin to be notified of any changes to any switches.
-
-        The MachineController's list of registered monitors doesn't actually
-        do anything. Rather it's a dictionary of sets which the monitors
-        themselves can reference when they need to do something. We just needed
-        a central registry of monitors.
-
-        """
-        if monitor_class not in self.monitors:
-            self.monitors[monitor_class] = set()
-
-        self.monitors[monitor_class].add(monitor)
-
-    def run(self):
-        """Starts the main machine run loop."""
-        self.log.debug("Starting the main run loop.")
-
-        self.default_platform.timer_initialize()
-
-        self.loop_start_time = time.time()
-
-        if self.default_platform.features['hw_timer']:
-            self.default_platform.run_loop()
-        else:
-            self._mpf_timer_run_loop()
-
-    def _mpf_timer_run_loop(self):
-        #Main machine run loop with when the default platform interface
-        #specifies the MPF should control the main timer
-
-        start_time = time.time()
-        loops = 0
-        secs_per_tick = timing.Timing.secs_per_tick
-        sleep_sec = self.config['timing']['hw_thread_sleep_ms'] / 1000.0
-
-        self.default_platform.next_tick_time = time.time()
-
-        try:
-            while self.done is False:
-                time.sleep(sleep_sec)
-                self.default_platform.tick()
-                loops += 1
-                if self.default_platform.next_tick_time <= time.time():  # todo change this
-                    self.timer_tick()
-                    self.default_platform.next_tick_time += secs_per_tick
-
-        except KeyboardInterrupt:
-            pass
-
-        self.log_loop_rate()
-        self._platform_stop()
-
-        try:
-            self.log.info("Hardware loop rate: %s Hz",
-                          round(loops / (time.time() - start_time), 2))
-        except ZeroDivisionError:
-            self.log.info("Hardware loop rate: 0 Hz")
-
-    def timer_tick(self):
-        """Called to "tick" MPF at a rate specified by the machine Hz setting.
-
-        This method is called by the MPF run loop or the platform run loop,
-        depending on the platform. (Some platforms drive the loop, and others
-        let MPF drive.)
-
-        """
-        self.tick_num += 1  # used to calculate the loop rate when MPF exits
-        self.timing.timer_tick()  # notifies the timing module
-        self.events.post('timer_tick')  # sends the timer_tick system event
-        tasks.Task.timer_tick()  # notifies tasks
-        self.delayRegistry.timer_tick(self)
-        self.events._process_event_queue()
-
-    def _platform_stop(self):
-        for platform in list(self.hardware_platforms.values()):
-            platform.stop()
-
-    def power_off(self):
-        """Attempts to perform a power down of the pinball machine and ends MPF.
-
-        This method is not yet implemented.
-        """
-        pass
-
-    def quit(self):
-        """Performs a graceful exit of MPF."""
-        self.log.info("Shutting down...")
-        self.events.post('shutdown')
-        self.events._process_event_queue()
-        self.done = True
-
-    def log_loop_rate(self):
-        self.log.info("Target MPF loop rate: %s Hz", timing.Timing.HZ)
-
-        try:
-            self.log.info("Actual MPF loop rate: %s Hz",
-                          round(self.tick_num /
-                                (time.time() - self.loop_start_time), 2))
-        except ZeroDivisionError:
-            self.log.info("Actual MPF loop rate: 0 Hz")
-
-    def _loading_tick(self):
-        if not self.asset_loader_complete:
-
-            if AssetManager.loader_queue.qsize():
-                self.log.debug("Holding Attract start while MPF assets load. "
-                               "Remaining: %s",
-                               AssetManager.loader_queue.qsize())
-                self.bcp.bcp_trigger('assets_to_load',
-                     total=AssetManager.total_assets,
-                     remaining=AssetManager.loader_queue.qsize())
-            else:
-                self.bcp.bcp_trigger('assets_to_load',
-                     total=AssetManager.total_assets,
-                     remaining=0)
-                self.asset_loader_complete = True
-
-        elif self.bcp.active_connections and not self.flag_bcp_reset_complete:
-            if self.tick_num % Timing.HZ == 0:
-                self.log.info("Waiting for BCP reset_complete...")
-
-        else:
-            self.log.debug("Asset loading complete")
-            self._reset_complete()
-
-    def bcp_reset_complete(self):
-        self.flag_bcp_reset_complete = True
-
-    def _reset_complete(self):
-        self.log.debug('Reset Complete')
-        self.events.post('reset_complete')
-        self.events.remove_handler(self._loading_tick)
 
     def configure_debugger(self):
         pass
-
-    def get_debug_status(self, debug_path):
-
-        if (self.options['loglevel'] > 10 or
-                    self.options['consoleloglevel'] > 10):
-            return True
-
-        class_, module = debug_path.split('|')
-
-        try:
-            if module in self.active_debugger[class_]:
-                return True
-            else:
-                return False
-        except KeyError:
-            return False
 
     def set_machine_var(self, name, value, force_events=False):
         """Sets the value of a machine variable.
@@ -641,7 +322,7 @@ class MachineWizard(object):
 
 # The MIT License (MIT)
 
-# Copyright (c) 2013-2016 Brian Madden, Gabe Knuth and John Marsh
+# Copyright (c) 2013-2016 Brian Madden, Gabe Knuth and the AUTHORS
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal

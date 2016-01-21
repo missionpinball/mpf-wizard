@@ -1,0 +1,25 @@
+#:kivy 1.0
+<MainMenu>:
+    size_hint: 1.0, 1.0
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    do_default_tab: False
+    tab_width: 175
+
+    TabbedPanelItem:
+        text: 'Switches'
+        id: tab_switches
+        GridLayout:
+            rows: 1
+            cols: 2
+            ListView:
+                item_strings: [str(index) for index in range(100)]
+            Label:
+                text: 'TEST'
+    TabbedPanelItem:
+        text: 'File Tree View'
+        id: tab_filetreeview
+        FloatLayout:
+    TabbedPanelItem:
+        text: 'Merged Tree View'
+        id: tab_mergedtreeview
+        FloatLayout:
