@@ -1,5 +1,7 @@
 # mpf-wizard
 
+[![Coverage Status](https://coveralls.io/repos/github/missionpinball/mpf-wizard/badge.svg?branch=master)](https://coveralls.io/github/missionpinball/mpf-wizard?branch=master)
+
 Mission Pinball Framework Wizard (mpf-wizard)
 ===============================
 
