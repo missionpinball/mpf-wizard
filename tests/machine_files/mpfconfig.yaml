@@ -1,0 +1,332 @@
+# config_version=3
+# This file contains configuration options for the MPF itself, including
+# default settings for your machine-wide game-specific config files.
+
+# You should create specific subfolders for each game you want to make and put
+# config files there to override these defaults.
+
+mpf:
+    system_modules: !!omap
+        - config_processor: mpf.system.config.Config
+        - timing: mpf.system.timing.Timing
+        - events: mpf.system.events.EventManager
+        - mode_controller: mpf.system.mode_controller.ModeController
+        - shot_profile_manager: mpf.system.shot_profile_manager.ShotProfileManager
+        - device_manager: mpf.system.device_manager.DeviceManager
+        - switch_controller: mpf.system.switch_controller.SwitchController
+        - ball_controller: mpf.system.ball_controller.BallController
+        - light_controller: mpf.system.light_controller.LightController
+        - bcp: mpf.system.bcp.BCP
+        - logic_blocks: mpf.system.logic_blocks.LogicBlocks
+        - scoring: mpf.system.scoring.ScoreController
+
+    platform_overlays:
+        - snux: mpf.platform.snux.Snux
+
+    device_modules:
+        driver.Driver
+        switch.Switch
+        matrix_light.MatrixLight
+        led.LED
+        gi.GI
+        autofire.AutofireCoil
+        ball_device.BallDevice
+        playfield.Playfield
+        drop_target.DropTarget
+        drop_target.DropTargetBank
+        shot.Shot
+        shot_group.ShotGroup
+        flipper.Flipper
+        diverter.Diverter
+        score_reel.ScoreReel
+        score_reel.ScoreReelGroup
+        flasher.Flasher
+        playfield_transfer.PlayfieldTransfer
+        ball_lock.BallLock
+        multiball.Multiball
+        ball_save.BallSave
+        driver_enabled.DriverEnabled
+        accelerometer.Accelerometer
+        servo_controller.ServoController
+        servo.Servo
+
+    plugins:
+        mpf.plugins.auditor.Auditor
+        mpf.plugins.info_lights.InfoLights
+        mpf.plugins.osc.OSC
+        mpf.plugins.socket_events.SocketClient
+        mpf.plugins.switch_player.SwitchPlayer
+
+    platforms:
+        fadecandy: mpf.platform.fadecandy.HardwarePlatform
+        fast: mpf.platform.fast.HardwarePlatform
+        p_roc:  mpf.platform.p_roc.HardwarePlatform
+        p3_roc:  mpf.platform.p3_roc.HardwarePlatform
+        smartmatrix: mpf.platform.smartmatrix.HardwarePlatform
+        snux: mpf.platform.snux.Snux
+        virtual: mpf.platform.virtual.HardwarePlatform
+        smart_virtual: mpf.platform.smart_virtual.HardwarePlatform
+
+
+    paths:
+        scriptlets: scriptlets
+        shows: shows
+        audits: data/audits.yaml
+        machine_vars: data/machine_vars.yaml
+        high_scores: data/high_scores.yaml
+        config_cache: data/config_cache.yaml
+        earnings: data/earnings.yaml
+        machine_files: machine_files
+        config: config
+        modes: modes
+
+    default_pulse_ms: 10
+    default_flash_ms: 50
+    auto_create_switch_events: True
+    switch_event_active: "%_active"
+    switch_event_inactive: "%_inactive"
+    switch_tag_event: sw_%
+    allow_invalid_config_sections: false
+    config_versions_file: tools/config_versions.yaml
+    save_machine_vars_to_disk: true
+
+    device_collection_control_events:
+        autofires:
+            - enable
+            - disable
+        ball_devices:
+            - stop
+            - eject_all
+        coils:
+            - disable
+        flippers:
+            - enable
+            - disable
+        leds:
+            - "off"
+        lights:
+            - "off"
+        gi:
+            - enable
+            - disable
+
+    mode_config_sections:
+      - autofire_coils
+      - ball_devices
+      - ball_saves
+      - coils
+      - diverters
+      - drop_targets
+      - drop_target_banks
+      - flashers
+      - flippers
+      - gis
+      - leds
+      - matrix_lights
+      - multiballs
+      - playfields
+      - playfield_transfers
+      - score_reels
+      - score_reel_groups
+      - shots
+      - shot_groups
+      - shot_profiles
+      - switches
+
+# Default settings for machines. All can be overridden
+
+p_roc:
+    lamp_matrix_strobe_time: 100
+    watchdog_time: 1000
+    use_watchdog: True
+
+fast:
+    ports: com3, com4, com5
+    baud: 921600
+    watchdog: 1s
+    default_debounce_close: 10ms
+    default_debounce_open: 10ms
+
+modes:
+    - attract
+    - game
+
+auditor:
+    save_events:
+        game_started
+        ball_ended
+        game_ended
+    num_player_top_records: 10
+    audit:
+        shots
+        switches
+        events
+        player
+    events:
+        game_started
+        game_ended
+    player:
+        score
+
+displaydefaults:
+    text:
+        font: default
+        size: 10
+        opaque: false
+        v_pos: center
+        h_pos: center
+        x: 0
+        y: 0
+        time: 0s
+        text_color: ffffff
+        background_color: 000000
+        text_shade: 15
+        background_shade: 0
+        antialias: False
+
+fonts:
+    default:
+        file: Quadrit.ttf
+        size: 10
+        crop_top: 2
+        crop_bottom: 3
+    space title huge:
+        file: DEADJIM.TTF
+        size: 29
+        antialias: yes
+        crop_top: 3
+        crop_bottom: 3
+    space title:
+        file: DEADJIM.TTF
+        size: 21
+        antialias: yes
+        crop_top: 2
+        crop_bottom: 3
+    medium:
+        file: pixelmix.ttf
+        size: 8
+        crop_top: 1
+        crop_bottom: 1
+    small:
+        file: smallest_pixel-7.ttf
+        size: 9
+        crop_top: 2
+        crop_bottom: 3
+    tall title:
+       file: big_noodle_titling.ttf
+       size: 20
+
+textstrings:
+    volume_zero: OFF
+    volume_max: MAX
+
+asset_defaults:
+    shows:
+        default:
+            load: preload
+
+bcp:
+    connections:
+        local_display:
+            host: localhost
+            port: 5050
+            connection_attempts: 5
+            require_connection: no
+
+    event_map:
+        ball_started:
+            command: ball_start
+            params:
+                player_num: "%player"
+                ball: "%ball"
+
+        ball_ending:
+            command: ball_end
+
+        player_turn_start:
+            command: player_turn_start
+            params:
+                player_num: "%number"
+
+        tilt:
+            command: tilt
+
+        slam_tilt:
+            command: slam_tilt
+
+        tilt_warning:
+            command: tilt_warning
+            params:
+                warnings: "%warnings"
+                warnings_remaining: "%warnings_remaining"
+
+    player_variables:
+      __all__
+
+    machine_variables:
+      __all__
+
+    shots:
+      __all__
+
+volume:
+    tracks:
+        master: 20
+        voice: 20
+        sfx: 20
+        music: 20
+    steps: 20
+
+open_pixel_control:
+    host: localhost
+    port: 7890
+    connection_required: no
+    connection_attempts: -1
+    number_format: int
+
+shot_profiles:
+    default:
+        states:
+          - name: unlit
+            light_script: "off"
+          - name: lit
+            light_script: "on"
+
+light_scripts:
+    flash:
+        - tocks: 1
+          color: ff
+        - tocks: 1
+          color: 0
+    "on":
+        - tocks: 1
+          color: ff
+    "off":
+        - tocks: 1
+          color: 0
+
+playfields:
+    playfield:
+        tags: default
+
+debug_profiles:
+    verbose:
+        system_modules:
+            events
+            mode_controller
+        device_collections:
+        individual_devices:
+        plugins:
+
+hardware:
+  platform: smart_virtual
+  coils: default
+  switches: default
+  matrix_lights: default
+  leds: default
+  dmd: default
+  gis: default
+  flashers: default
+  driverboards: virtual
+  accelerometers: default
+  servo_controllers: default

@@ -2,6 +2,7 @@ language: python
 python:
 - 3.4
 install:
+- pip install --upgrade pip
 - pip install ruamel.yaml==0.10.10
 - pip install coveralls
 - pip install https://github.com/missionpinball/mpf/zipball/dev

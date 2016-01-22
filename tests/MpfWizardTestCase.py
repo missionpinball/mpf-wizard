@@ -21,8 +21,8 @@ class TestMachineWizard(MachineWizard):
 class MpfWizardTestCase(unittest.TestCase):
     def loadTestArgs(self):
         self.testargs = dict()
-        self.testargs['mpfconfigile'] = 'E:\\mpf-dev\\mpf\\mpf\\mpfconfig.yaml'
-        self.testargs['machine_path'] = 'E:\\spaceballs\\spaceballs'
+        self.testargs['mpfconfigfile'] = 'tests\\machine_files\\mpfconfig.yaml'
+        self.testargs['machine_path'] = '..\\tests\\machine_files\\basic_loading'
         self.testargs['loglevel'] = 10
         self.testargs['bcp'] = True
         self.testargs['consoleloglevel'] = 20
