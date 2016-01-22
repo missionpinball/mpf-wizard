@@ -1,25 +1,25 @@
 import unittest
+import sys
+import logging
+import inspect
+
+from datetime import datetime, timedelta
+
+from mock import *
 
 from mpfwiz.machinewizard import MachineWizard
 from mpf.system.utility_functions import Util
-import logging
-import time
-import sys
-from mock import *
-from datetime import datetime, timedelta
-import inspect
 
+from time import time, sleep
 
 class TestMachineWizard(MachineWizard):
     def __init__(self, options):
         self.options = options
         #super().__init__(options)
 
-    def someRandomFunction(self):
-        return 'fyc'
-
 class MpfWizardTestCase(unittest.TestCase):
-    def loadTestArgs(self):
+    def __init__(self, *args):
+        super().__init__(*args)
         self.testargs = dict()
         self.testargs['mpfconfigfile'] = 'tests/machine_files/mpfconfig.yaml'
         self.testargs['machine_path'] = '../tests/machine_files/basic_loading'
@@ -31,6 +31,3 @@ class MpfWizardTestCase(unittest.TestCase):
         self.testargs['rebuild_cache'] = False
         self.testargs['force_platform'] = None
         self.testargs['configfile'] = ['config']
-
-    def someRandomFunction(self):
-        return 'fyc'
