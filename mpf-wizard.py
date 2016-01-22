@@ -17,8 +17,8 @@ import errno
 import version
 import sys
 from mpf.system.utility_functions import Util
-from machinewizard import MachineWizard
-from mpf_wizard_ui import UIConfigTree, WizardUI
+from mpfwiz.machinewizard import MachineWizard
+from mpfwiz.mpf_wizard_ui import UIConfigTree, WizardUI
 
 
 parser = argparse.ArgumentParser(description='Starts the mpf-wizard')

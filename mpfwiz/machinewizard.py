@@ -22,7 +22,7 @@ from mpf.system.assets import AssetManager
 from mpf.system.utility_functions import Util
 from mpf.system.file_manager import FileManager
 import version
-from config_storage import MPFConfigFile
+from mpfwiz.config_storage import MPFConfigFile
 
 
 class MachineWizard(object):

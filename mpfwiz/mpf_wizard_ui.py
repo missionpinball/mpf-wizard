@@ -9,7 +9,7 @@ from kivy.lang import Builder
 from ruamel.yaml.comments import CommentedSeq
 import logging
 import sys
-from config_storage import MPFConfigFile
+from mpfwiz.config_storage import MPFConfigFile
 
 class MainMenu(TabbedPanel):
     pass
@@ -25,8 +25,8 @@ class WizardUI(object):
         menu.ids.tab_filetreeview.add_widget(tree.getTreeViewAsFiles())
         menu.ids.tab_mergedtreeview.add_widget(tree.getMergedTreeView())
 
-        switches = self.machine.getSwitches()
-        menu.ids.tab_switches.add_widget(UISwitchPanel(self.machine.config_files))
+        #switches = self.machine.getSwitches()
+        #menu.ids.tab_switches.add_widget(UISwitchPanel(self.machine.config_files))
         
         return menu
         

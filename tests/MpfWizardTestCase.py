@@ -1,6 +1,6 @@
 import unittest
 
-from machinewizard import MachineWizard
+from mpfwiz.machinewizard import MachineWizard
 from mpf.system.utility_functions import Util
 import logging
 import time
