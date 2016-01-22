@@ -120,7 +120,7 @@ class MachineWizard(object):
         """
         python_version = sys.version_info
 
-        if python_version[0] != 3:
+        if python_version[0] != 3:  # pragma: no cover
             self.log.error("Incorrect Python version. MPF requires Python 3."
                            "x. You have Python %s.%s.%s.", python_version[0],
                            python_version[1], python_version[2])
