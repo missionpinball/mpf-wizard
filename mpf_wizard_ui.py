@@ -20,9 +20,14 @@ class WizardUI(object):
         
     def getMainMenu(self):
         menu = MainMenu()
+
         tree = UIConfigTree(self.machine.config_files)
         menu.ids.tab_filetreeview.add_widget(tree.getTreeViewAsFiles())
         menu.ids.tab_mergedtreeview.add_widget(tree.getMergedTreeView())
+
+        switches = self.machine.getSwitches()
+        menu.ids.tab_switches.add_widget(UISwitchPanel(self.machine.config_files))
+        
         return menu
         
 class UIConfigTree(object):
