@@ -7,3 +7,9 @@ class TestConfigLoad(MpfWizardTestCase):
         machine = TestMachineWizard(None)
         
         self.assertEqual(machine.someRandomFunction(), 'fyc')
+
+    def test_some_other_thing(self):
+        machine = TestMachineWizard(None)
+        
+        self.assertEqual(machine.someRandomFunction(), 'fyc')
+        
