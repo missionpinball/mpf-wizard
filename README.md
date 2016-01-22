@@ -2,6 +2,8 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/missionpinball/mpf-wizard/badge.svg?branch=master)](https://coveralls.io/github/missionpinball/mpf-wizard?branch=master)
 
+[![Build Status](https://travis-ci.org/missionpinball/mpf-wizard.svg?branch=master)](https://travis-ci.org/missionpinball/mpf-wizard)
+
 Mission Pinball Framework Wizard (mpf-wizard)
 ===============================
 
