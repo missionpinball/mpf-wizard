@@ -15,9 +15,7 @@ import errno
 
 from mpf.system import *
 from mpf.system.config import Config, CaseInsensitiveDict
-from mpf.system.tasks import Task, DelayManager, DelayManagerRegistry
 from mpf.system.data_manager import DataManager
-from mpf.system.timing import Timing
 from mpf.system.assets import AssetManager
 from mpf.system.utility_functions import Util
 from mpf.system.file_manager import FileManager
@@ -40,13 +38,7 @@ class MachineWizard(object):
             used to launch mpf.py.
         config: A dictionary of machine's configuration settings, merged from
             various sources.
-        done: Boolean. Set to True and MPF exits.
         machine_path: The root path of this machine_files folder
-        display:
-        plugins:
-        scriptlets:
-        platform:
-        events:
     """
     def __init__(self, options):
         self.options = options
@@ -57,10 +49,6 @@ class MachineWizard(object):
 
         self.done = False
         self.machine_path = None  # Path to this machine's folder root
-        self.game = None
-        self.machine_vars = CaseInsensitiveDict()
-        self.machine_var_monitor = False
-        self.machine_var_data_manager = None
 
         FileManager.init()
 
@@ -72,44 +60,7 @@ class MachineWizard(object):
         self._set_machine_path()
         self._load_config_from_files()
         
-        self.hardware_platforms = dict()
-        self.default_platform = None        
-
-        # Do this here so there's a credit_string var even if they're not using
-        # the credits mode
-        #try:
-            #credit_string = self.config['credits']['free_play_string']
-        #except KeyError:
-            #credit_string = 'FREE PLAY'
-
-        #self.create_machine_var('credits_string', credit_string, silent=True)
-
         self.log.info('machine config loaded')
-
-    def validate_machine_config_section(self, section):
-        if section not in self.config['config_validator']:
-            return
-
-        if section not in self.config:
-            self.config[section] = dict()
-
-        self.config[section] = self.config_processor.process_config2(
-            section, self.config[section], section)
-
-    def _load_machine_vars(self):
-        self.machine_var_data_manager = DataManager(self, 'machine_vars')
-
-        current_time = time.time()
-
-        for name, settings in (
-                iter(self.machine_var_data_manager.get_data().items())):
-
-            if ('expire' in settings and settings['expire'] and
-                    settings['expire'] < current_time):
-
-                settings['value'] = 0
-
-            self.create_machine_var(name=name, value=settings['value'])
 
     def _set_machine_path(self):
         # If the machine folder value passed starts with a forward or
@@ -180,144 +131,6 @@ class MachineWizard(object):
         self.log.debug("Platform: %s", sys.platform)
         self.log.debug("Python executable location: %s", sys.executable)
         self.log.debug("32-bit Python? %s", sys.maxsize < 2**32)
-
-
-    def configure_debugger(self):
-        pass
-
-    def set_machine_var(self, name, value, force_events=False):
-        """Sets the value of a machine variable.
-
-        Args:
-            name: String name of the variable you're setting the value for.
-            value: The value you're setting. This can be any Type.
-            force_events: Boolean which will force the event posting, the
-                machine monitor callback, and writing the variable to disk (if
-                it's set to persist). By default these things only happen if
-                the new value is different from the old value.
-
-        """
-        if name not in self.machine_vars:
-            self.log.warning("Received request to set machine_var '%s', but "
-                             "that is not a valid machine_var.", name)
-            return
-
-        prev_value = self.machine_vars[name]['value']
-        self.machine_vars[name]['value'] = value
-
-        try:
-            change = value-prev_value
-        except TypeError:
-            if prev_value != value:
-                change = True
-            else:
-                change = False
-
-        if change or force_events:
-
-            if self.machine_vars[name]['persist'] and self.config['mpf']['save_machine_vars_to_disk']:
-                disk_var = CaseInsensitiveDict()
-                disk_var['value'] = value
-
-                if self.machine_vars[name]['expire_secs']:
-                    disk_var['expire'] = (time.time() +
-                        self.machine_vars[name]['expire_secs'])
-
-                self.machine_var_data_manager.save_key(name, disk_var)
-
-            self.log.debug("Setting machine_var '%s' to: %s, (prior: %s, "
-                           "change: %s)", name, value, prev_value,
-                           change)
-            self.events.post('machine_var_' + name,
-                                     value=value,
-                                     prev_value=prev_value,
-                                     change=change)
-
-            if self.machine_var_monitor:
-                for callback in self.monitors['machine_vars']:
-                    callback(name=name, value=value,
-                             prev_value=prev_value, change=change)
-
-    def get_machine_var(self, name):
-        """Returns the value of a machine variable.
-
-        Args:
-            name: String name of the variable you want to get that value for.
-
-        Returns:
-            The value of the variable if it exists, or None if the variable
-            does not exist.
-
-        """
-        try:
-            return self.machine_vars[name]['value']
-        except KeyError:
-            return None
-
-    def is_machine_var(self, name):
-        if name in self.machine_vars:
-            return True
-        else:
-            return False
-
-    def create_machine_var(self, name, value=0, persist=False,
-                           expire_secs=None, silent=False):
-        """Creates a new machine variable:
-
-        Args:
-            name: String name of the variable.
-            value: The value of the variable. This can be any Type.
-            persist: Boolean as to whether this variable should be saved to
-                disk so it's available the next time MPF boots.
-            expire_secs: Optional number of seconds you'd like this variable
-                to persist on disk for. When MPF boots, if the expiration time
-                of the variable is in the past, it will be loaded with a value
-                of 0. For example, this lets you write the number of credits on
-                the machine to disk to persist even during power off, but you
-                could set it so that those only stay persisted for an hour.
-
-        """
-        var = CaseInsensitiveDict()
-
-        var['value'] = value
-        var['persist'] = persist
-        var['expire_secs'] = expire_secs
-
-        self.machine_vars[name] = var
-
-        if not silent:
-            self.set_machine_var(name, value, force_events=True)
-
-    def remove_machine_var(self, name):
-        """Removes a machine variable by name. If this variable persists to
-        disk, it will remove it from there too.
-
-        Args:
-            name: String name of the variable you want to remove.
-
-        """
-        try:
-            del self.machine_vars[name]
-            self.machine_var_data_manager.remove_key(name)
-        except KeyError:
-            pass
-
-    def remove_machine_var_search(self, startswith='', endswith=''):
-        """Removes a machine variable by matching parts of its name.
-
-        Args:
-            startswith: Optional start of the variable name to match.
-            endswith: Optional end of the variable name to match.
-
-        For example, if you pass startswit='player' and endswith='score', this
-        method will match and remove player1_score, player2_score, etc.
-
-        """
-        for var in list(self.machine_vars.keys()):
-            if var.startswith(startswith) and var.endswith(endswith):
-                del self.machine_vars[var]
-                self.machine_var_data_manager.remove_key(var)
-
 
 
 # The MIT License (MIT)
