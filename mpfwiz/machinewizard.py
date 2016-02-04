@@ -14,7 +14,7 @@ import queue
 import errno
 
 from mpf.system import *
-from mpf.system.config import Config, CaseInsensitiveDict
+from mpf.system.config import Config
 from mpf.system.data_manager import DataManager
 from mpf.system.assets import AssetManager
 from mpf.system.utility_functions import Util
